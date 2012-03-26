@@ -90,24 +90,44 @@ end
 
 def go_through_files(directory)
   File.open(directory).each{ |line|
-    if line.index("I18n.t('")
+    if line.index("I18n.t(")
       line = line.strip
       prepare_line(line)
+    elsif line.index("I18n[")
+      line = line.strip
+      prepate_line_javascript(line)
     end
   }
 end
 
 def prepare_line(line)
   begin
-    line = line.slice(line.index('I18n.t(\''), line.length)
+    line = line.slice(line.index('I18n.t('), line.length)
+    character = line[7].chr
     line = line.slice(8, line.length)
-    key = get_key(line)
-    check_in_yml(key)
-  end while line.index('I18n.t(\'') != nil
+    key = get_key(line, character)
+    if key != nil && key.index('txt.') == 0
+      check_in_yml(key)
+    end
+  end while line.index('I18n.t(') != nil
 end
 
-def get_key(line)
-  return line.slice!(0, line.index('\''))
+def prepate_line_javascript(line)
+  begin
+    line = line.slice(line.index('I18n['), line.length)
+    character = line[5].chr
+    line = line.slice(6, line.length)
+    key = get_key(line, character)
+    if key != nil && key.index('txt.') == 0
+      check_in_yml(key)
+    end
+  end while line.index('I18n[') != nil
+end
+
+def get_key(line, character)
+  if line.index(character) != nil
+    return line.slice!(0, line.index(character))
+  end
 end
 
 def check_in_yml (key)
@@ -119,6 +139,7 @@ def check_in_yml (key)
     end 
   end
 end
+
 
 def get_only_admin_keys(key)
   if key.index("txt.admin.")
