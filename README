@@ -1,0 +1,12 @@
+I18n tools
+
+1. Verify key presence
+It helps you to find missing keys in the YAML file.
+
+### How to run ###
+#
+# 1. In console run: ruby verify_keys_presence <directory> <options>
+# 2. If you only want to find the missing txt.admin keys use option -a
+#
+# NOTE: It currently only saves keys in the admin.yml file. This will be improved and add as an option
+##################
