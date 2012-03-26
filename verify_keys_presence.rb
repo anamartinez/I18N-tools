@@ -1,7 +1,7 @@
 ### How to run ###
 #
 # 1. In console run: ruby verify_keys_presence <directory> <options>
-# 2. If you only want to find the missing txt.admin keys use option -a
+# 2. If you only want to find the missing txt.admin keys use option -a. This will only store keys in admin.yml
 #
 ##################
 
@@ -9,8 +9,6 @@ def run_find_missing_keys
   @key_hash = Hash.new
   @missing_keys = Array.new
   get_args
-  path_yml_file = "zendesk/config/locales/translations/admin.yml"
-  key_hash = read_yml_file(path_yml_file)
   get_files_directory(@file_to_check)
   check_missing_keys
 end
@@ -18,10 +16,31 @@ end
 def get_args
   if ARGV.length > 1
     if ARGV[1] == "-a"
+      path_yml_file = "zendesk/config/locales/translations/admin.yml"
+      read_yml_file(path_yml_file)
       @only_show_admin_keys = true
     end
+  else
+    path_yml_file = "zendesk/config/locales/translations/"
+    get_all_yml_files(path_yml_file)
   end
   @file_to_check = ARGV[0]
+end
+
+def get_all_yml_files(path)
+  if File.directory?(path)
+    Dir.foreach(path) {|x| 
+      if !(x == "." || x == ".." || x == ".DS_Store")
+        if File.directory?(path + x)
+          get_all_yml_files(path + x)
+        else
+          read_yml_file(path + x)
+        end
+      end
+      }
+  else
+    read_yml_file(path + x)
+  end
 end
 
 def read_yml_file(path)
@@ -35,7 +54,10 @@ def read_yml_file(path)
 end
 
 def eliminate_unnecessary_chars(line)
-  return line.slice(6, line.length).slice(0..-2)
+  line = line.slice(4, line.length).slice(0..-2)  #Eliminates "key:" string and '"' string. 
+  line = line.strip                               #Eliminates spaces before after key string and before key
+  line = line.slice(1, line.length)               #Eliminates '"' at the beginning of the key
+  return line
 end
 
 def get_files_directory (path)
@@ -78,7 +100,11 @@ end
 
 def check_in_yml (key)
   if !@key_hash.has_key?(key)
-    @missing_keys.push(key)
+    if @only_show_admin_keys && get_only_admin_keys(key)
+      @missing_keys.push(key)
+    elsif !@only_show_admin_keys
+      @missing_keys.push(key)
+    end 
   end
 end
 
@@ -87,19 +113,16 @@ def check_missing_keys
     puts "No missing keys"
   else
     @missing_keys.each do |key|
-      if @only_show_admin_keys
-        get_only_admin_keys(key)
-      else
         puts key
-      end
     end
   end
 end
 
 def get_only_admin_keys(key)
   if key.index("txt.admin.")
-    puts key
+    return true
   end
+  return false
 end
 
 run_find_missing_keys
