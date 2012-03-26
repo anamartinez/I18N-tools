@@ -111,13 +111,20 @@ def get_key(line)
 end
 
 def check_in_yml (key)
-  if !@key_hash.has_key?(key)
+  if !@key_hash.has_key?(key) && !@white_list.has_key?(key) && !@missing_keys.include?(key)
     if @only_show_admin_keys && get_only_admin_keys(key)
       @missing_keys.push(key)
     elsif !@only_show_admin_keys
       @missing_keys.push(key)
     end 
   end
+end
+
+def get_only_admin_keys(key)
+  if key.index("txt.admin.")
+    return true	
+  end
+ 	return false	
 end
 
 def check_missing_keys
