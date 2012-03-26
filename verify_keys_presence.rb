@@ -2,29 +2,51 @@
 #
 # 1. In console run: ruby verify_keys_presence <directory> <options>
 # 2. If you only want to find the missing txt.admin keys use option -a. This will only store keys in admin.yml
+# 3. If you want to load the whitelist file use option -w
 #
 ##################
 
 def run_find_missing_keys
   @key_hash = Hash.new
   @missing_keys = Array.new
+  @white_list = Hash.new
   get_args
   get_files_directory(@file_to_check)
   check_missing_keys
 end
 
 def get_args
-  if ARGV.length > 1
-    if ARGV[1] == "-a"
-      path_yml_file = "zendesk/config/locales/translations/admin.yml"
-      read_yml_file(path_yml_file)
-      @only_show_admin_keys = true
-    end
+  if ARGV.include? "-a"
+    path_yml_file = "zendesk/config/locales/translations/admin.yml"
+    read_yml_file(path_yml_file)
+    @only_show_admin_keys = true
   else
     path_yml_file = "zendesk/config/locales/translations/"
     get_all_yml_files(path_yml_file)
   end
+  
+  if ARGV.include? "-w"
+    get_while_list_keys("whitelist")
+  end
+  
   @file_to_check = ARGV[0]
+end
+
+def read_yml_file(path)
+  File.open(path).each { |line|
+    line = line.strip
+    if line.start_with?("key")
+      key = eliminate_unnecessary_chars(line)
+      @key_hash[key] = 0
+    end
+  }
+end
+
+def eliminate_unnecessary_chars(line)
+  line = line.slice(4, line.length).slice(0..-2)  #Eliminates "key:" string and '"' string. 
+  line = line.strip                               #Eliminates spaces before after key string and before key
+  line = line.slice(1, line.length)               #Eliminates '"' at the beginning of the key
+  return line
 end
 
 def get_all_yml_files(path)
@@ -43,21 +65,11 @@ def get_all_yml_files(path)
   end
 end
 
-def read_yml_file(path)
+def get_while_list_keys(path)
   File.open(path).each { |line|
     line = line.strip
-    if line.start_with?("key")
-      key = eliminate_unnecessary_chars(line)
-      @key_hash[key] = 0
-    end
+    @white_list[line] = 0
   }
-end
-
-def eliminate_unnecessary_chars(line)
-  line = line.slice(4, line.length).slice(0..-2)  #Eliminates "key:" string and '"' string. 
-  line = line.strip                               #Eliminates spaces before after key string and before key
-  line = line.slice(1, line.length)               #Eliminates '"' at the beginning of the key
-  return line
 end
 
 def get_files_directory (path)
@@ -113,16 +125,13 @@ def check_missing_keys
     puts "No missing keys"
   else
     @missing_keys.each do |key|
+      if @white_list.empty?
         puts key
+      elsif !@white_list.has_key?(key)
+        puts key
+      end
     end
   end
-end
-
-def get_only_admin_keys(key)
-  if key.index("txt.admin.")
-    return true
-  end
-  return false
 end
 
 run_find_missing_keys

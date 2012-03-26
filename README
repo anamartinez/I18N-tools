@@ -6,7 +6,9 @@ It helps you to find missing keys in the YAML file.
 ### How to run ###
 #
 # 1. In console run: ruby verify_keys_presence <directory> <options>
-# 2. If you only want to find the missing txt.admin keys use option -a
+# 2. If you only want to find the missing txt.admin keys use option -a. This will only load keys in the admin.yml file
+# 3. If you want to load a whitelist of keys create file named whitelist and put in the same folder as the script. In the file put each key in a different line as follows:
+# txt.admin.controllers.tag_controller.open_tickets
+# When running the script use option -w to load the whitelist file
 #
-# NOTE: It currently only saves keys in the admin.yml file. This will be improved and add as an option
 ##################
